@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Editar seletor — SelectorWatch{% endblock %}
+{% block nav_sites %}active{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'site_list' %}">Sites</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'site_detail' sel.site.pk %}">{{ sel.site.name }}</a></li>
+    <li class="breadcrumb-item active">Editar seletor</li>
+  </ol>
+</nav>
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header bg-dark text-white">
+        <i class="bi bi-pencil me-2"></i>Editar seletor
+      </div>
+      <div class="card-body">
+        <form method="post" action="{% url 'selector_edit' sel.pk %}">
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-semibold">{{ form.name.label }}</label>
+              {{ form.name }}
+              {% if form.name.errors %}<div class="invalid-feedback d-block">{{ form.name.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">{{ form.selector.label }}</label>
+              {{ form.selector }}
+              {% if form.selector.errors %}<div class="invalid-feedback d-block">{{ form.selector.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">{{ form.selector_type.label }}</label>
+              {{ form.selector_type }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">{{ form.expected_type.label }}</label>
+              {{ form.expected_type }}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">{{ form.min_results.label }}</label>
+              {{ form.min_results }}
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <div class="form-check mb-2">
+                {{ form.is_active }}
+                <label class="form-check-label fw-semibold">{{ form.is_active.label }}</label>
+              </div>
+            </div>
+          </div>
+          <hr>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save me-1"></i>Salvar
+            </button>
+            <a href="{% url 'site_detail' sel.site.pk %}" class="btn btn-outline-secondary">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

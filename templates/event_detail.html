@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Evento #{{ event.id }} — SelectorWatch{% endblock %}
+{% block nav_events %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>
+    <i class="bi bi-bug me-2"></i>Evento #{{ event.id }}
+    {% if event.resolved %}
+      <span class="badge bg-success fs-6 ms-2"><i class="bi bi-check2"></i> Resolvido</span>
+    {% else %}
+      <span class="badge bg-danger fs-6 ms-2"><i class="bi bi-exclamation"></i> Pendente</span>
+    {% endif %}
+  </h2>
+  <a href="{% url 'event_list' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i> Voltar
+  </a>
+</div>
+
+<div class="card mb-4 shadow-sm">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <small class="text-muted d-block">Site</small>
+        <strong>{{ event.selector.site.name }}</strong><br>
+        <a href="{{ event.selector.site.url }}" target="_blank" class="small text-truncate">
+          {{ event.selector.site.url }}
+        </a>
+      </div>
+      <div class="col-md-4">
+        <small class="text-muted d-block">Seletor</small>
+        <strong>{{ event.selector.name }}</strong><br>
+        <code class="small">{{ event.selector.selector }}</code>
+        <span class="badge bg-secondary ms-1">{{ event.selector.get_selector_type_display }}</span>
+      </div>
+      <div class="col-md-4">
+        <small class="text-muted d-block">Detectado em</small>
+        <strong>{{ event.detected_at|date:"d/m/Y H:i:s" }}</strong><br>
+        <small class="text-muted">Tipo: </small>
+        <code class="small">{{ event.change_type|default:"desconhecido" }}</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if event.change_type == "anomalia_de_valor" %}
+<div class="card mb-4 shadow-sm border-warning">
+  <div class="card-header bg-warning text-dark">
+    <i class="bi bi-graph-down-arrow me-2"></i>Anomalia de valor detectada
+  </div>
+  <div class="card-body">
+    <pre class="mb-0 fs-6" style="white-space: pre-wrap;">{{ event.diff_report }}</pre>
+    <div class="alert alert-info mt-3 mb-0">
+      <i class="bi bi-info-circle me-2"></i>
+      O seletor <strong>continua funcionando</strong>. O alerta foi gerado porque o valor extraído
+      variou além do threshold configurado. Verifique o histórico para confirmar se é uma mudança legítima.
+    </div>
+  </div>
+</div>
+
+{% else %}
+{% if event.suggested_selectors %}
+<div class="card mb-4 shadow-sm border-primary">
+  <div class="card-header bg-primary text-white">
+    <i class="bi bi-robot me-2"></i>Sugestões geradas pelo LLM
+  </div>
+  <div class="card-body">
+    <div class="alert alert-secondary mb-3">
+      <strong>Raciocínio:</strong> {{ event.suggested_selectors.reasoning }}
+    </div>
+
+    {% for sug in event.suggested_selectors.suggested_selectors %}
+      <div class="card mb-2 {% if forloop.first %}border-success{% else %}border-light{% endif %}">
+        <div class="card-body py-2">
+          <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+            <span class="badge {% if sug.confidence == 'high' %}bg-success{% elif sug.confidence == 'medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+              {{ sug.confidence|upper }}
+            </span>
+            {% for v in event.validation_results %}
+              {% if v.selector == sug.selector %}
+                {% if v.works %}
+                  <span class="badge bg-success"><i class="bi bi-check-circle"></i> Funciona no HTML atual</span>
+                  {% if v.extracted %}
+                    <small class="text-success">Extraiu: <em>{{ v.extracted.0|truncatechars:80 }}</em></small>
+                  {% endif %}
+                {% else %}
+                  <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Não funcionou</span>
+                  <small class="text-danger">{{ v.message }}</small>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          </div>
+          <code class="fs-6">{{ sug.selector }}</code>
+          <div class="text-muted small mt-1">{{ sug.explanation }}</div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="alert alert-warning mb-4">
+  <i class="bi bi-cpu me-2"></i>
+  Diagnóstico LLM ainda não executado para este evento.
+  Execute: <code>python manage.py diagnose_selector {{ event.selector.id }}</code>
+</div>
+{% endif %}
+
+{% if diff_html %}
+<div class="card mb-4 shadow-sm">
+  <div class="card-header bg-dark text-white d-flex justify-content-between">
+    <span><i class="bi bi-code-slash me-2"></i>Comparação de HTML (diff)</span>
+    <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#diffCollapse">
+      <i class="bi bi-arrows-expand"></i> Expandir/Recolher
+    </button>
+  </div>
+  <div class="collapse show" id="diffCollapse">
+    <div class="card-body p-0 overflow-auto" style="max-height: 500px;">
+      <style>
+        table.diff { width: 100%; font-family: monospace; font-size: .72rem; border-collapse: collapse; }
+        table.diff td, table.diff th { padding: 1px 6px; vertical-align: top; }
+        .diff_header { background: #343a40; color: #f8f9fa; }
+        td.diff_header { text-align: right; }
+        .diff_next { background: #343a40; color: #adb5bd; }
+        .diff_add { background: #d1e7dd; }
+        .diff_chg { background: #fff3cd; }
+        .diff_sub { background: #f8d7da; }
+      </style>
+      {{ diff_html|safe }}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endif %}
+
+{% if not event.resolved %}
+<form method="post">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-success">
+    <i class="bi bi-check2-circle"></i> Marcar como resolvido
+  </button>
+</form>
+{% else %}
+<p class="text-muted">
+  <i class="bi bi-check2-circle"></i>
+  Resolvido em {{ event.resolved_at|date:"d/m/Y H:i" }}
+</p>
+{% endif %}
+{% endblock %}

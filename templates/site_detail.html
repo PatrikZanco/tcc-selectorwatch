@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}{{ site.name }} — SelectorWatch{% endblock %}
+{% block nav_sites %}active{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'site_list' %}">Sites</a></li>
+    <li class="breadcrumb-item active">{{ site.name }}</li>
+  </ol>
+</nav>
+
+<div class="row g-4">
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-globe me-2"></i>Site</span>
+        <a href="{{ site.url }}" target="_blank" class="text-white-50 small">
+          <i class="bi bi-box-arrow-up-right"></i>
+        </a>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{% url 'site_detail' site.pk %}">
+          {% csrf_token %}
+          {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+              <div class="invalid-feedback d-block">{{ field.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-sm btn-primary w-100">
+            <i class="bi bi-save me-1"></i>Salvar alterações
+          </button>
+        </form>
+        <hr>
+        <form method="post" action="{% url 'site_delete' site.pk %}"
+              onsubmit="return confirm('Remover {{ site.name }}? Esta ação é irreversível.')">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+            <i class="bi bi-trash me-1"></i>Remover site
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0"><i class="bi bi-list-check me-2 text-primary"></i>Seletores</h5>
+      <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddSelector">
+        <i class="bi bi-plus-lg me-1"></i>Novo seletor
+      </button>
+    </div>
+
+    {% if selectors %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle bg-white shadow-sm rounded">
+        <thead class="table-dark">
+          <tr>
+            <th>Nome</th>
+            <th>Seletor</th>
+            <th>Tipo</th>
+            <th>Dado</th>
+            <th>Ativo</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sel in selectors %}
+          <tr>
+            <td>{{ sel.name }}</td>
+            <td><code class="text-danger">{{ sel.selector }}</code></td>
+            <td><span class="badge bg-secondary">{{ sel.get_selector_type_display }}</span></td>
+            <td><span class="badge bg-info text-dark">{{ sel.get_expected_type_display }}</span></td>
+            <td>
+              {% if sel.is_active %}
+                <span class="badge bg-success">Sim</span>
+              {% else %}
+                <span class="badge bg-secondary">Não</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{% url 'selector_edit' sel.pk %}" class="btn btn-xs btn-outline-secondary btn-sm">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="post" action="{% url 'selector_delete' sel.pk %}" class="d-inline"
+                    onsubmit="return confirm('Remover seletor {{ sel.name }}?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-xs btn-outline-danger btn-sm">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-4 text-muted border rounded bg-white">
+      <i class="bi bi-list-check" style="font-size: 2rem;"></i>
+      <p class="mt-2 mb-0">Nenhum seletor cadastrado.<br>Clique em <strong>Novo seletor</strong>.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="modal fade" id="modalAddSelector" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" action="{% url 'selector_create' site.pk %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Novo seletor — {{ site.name }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-semibold">{{ selector_form.name.label }}</label>
+              {{ selector_form.name }}
+            </div>
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">{{ selector_form.selector.label }}</label>
+              {{ selector_form.selector }}
+              <div class="form-text">CSS: <code>.classe</code> ou <code>#id</code> — XPath: <code>//tag[@attr='val']</code></div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">{{ selector_form.selector_type.label }}</label>
+              {{ selector_form.selector_type }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">{{ selector_form.expected_type.label }}</label>
+              {{ selector_form.expected_type }}
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">{{ selector_form.min_results.label }}</label>
+              {{ selector_form.min_results }}
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">{{ selector_form.anomaly_threshold.label }}</label>
+              {{ selector_form.anomaly_threshold }}
+              <div class="form-text">Só para tipo Número</div>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <div class="form-check mb-2">
+                {{ selector_form.is_active }}
+                <label class="form-check-label fw-semibold">{{ selector_form.is_active.label }}</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-1"></i>Adicionar seletor
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
