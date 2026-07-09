@@ -164,7 +164,7 @@ def suggest_selectors(selector_id: int) -> dict | None:
         suggested = suggestion.get("selector", "")
         try:
             values = run_selector(new_html, suggested, sel.selector_type)
-            is_valid, msg = validate_result(values, sel.expected_type, sel.min_results)
+            is_valid, msg, _ = validate_result(values, sel.expected_type, sel.min_results)
             validation_results.append({
                 "selector": suggested,
                 "works": is_valid,
