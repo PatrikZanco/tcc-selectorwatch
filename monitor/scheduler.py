@@ -32,6 +32,7 @@ def _run_pipeline(selector_id: int) -> None:
                 if llm_result and "error" not in llm_result:
                     n_sugs = len(llm_result.get("suggestions", []))
                     logger.info("  LLM gerou %d sugestão(ões).", n_sugs)
+                    _try_auto_heal(selector_id)
                 else:
                     logger.warning("  LLM retornou erro: %s", llm_result)
 
@@ -56,6 +57,34 @@ def _run_pipeline(selector_id: int) -> None:
             )
         except Exception as exc:
             logger.error("  Erro ao criar ChangeEvent de anomalia: %s", exc)
+
+
+def _try_auto_heal(selector_id: int) -> None:
+    """Aplica a melhor sugestão validada, se AUTO_HEAL estiver ativo."""
+    from django.conf import settings
+
+    if not settings.AUTO_HEAL:
+        return
+
+    from .healing import apply_recommendation
+    from .models import ChangeEvent
+
+    event = (
+        ChangeEvent.objects.filter(selector_id=selector_id, resolved=False)
+        .order_by("-detected_at")
+        .first()
+    )
+    if not event:
+        return
+
+    healed = apply_recommendation(event.id)
+    if healed:
+        logger.info(
+            "  Auto-healing aplicado: %r → %r",
+            healed["old_selector"], healed["new_selector"],
+        )
+    else:
+        logger.info("  Auto-healing: nenhuma sugestão válida para aplicar.")
 
 
 def _sync_selectors() -> None:

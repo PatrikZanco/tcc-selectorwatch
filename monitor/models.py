@@ -124,6 +124,8 @@ class ChangeEvent(models.Model):
     )
     resolved = models.BooleanField("Resolvido", default=False)
     resolved_at = models.DateTimeField("Resolvido em", null=True, blank=True)
+    auto_healed = models.BooleanField("Curado automaticamente", default=False)
+    applied_selector = models.TextField("Seletor aplicado", blank=True)
 
     class Meta:
         verbose_name = "Evento de falha"

@@ -84,3 +84,8 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 # Opcional: sobrescreve a URL base (ex.: endpoint compatível). Vazio = API oficial da OpenAI.
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "") or None
+
+# Auto-healing: se ativo, o pipeline aplica automaticamente a melhor sugestão
+# validada ao seletor quebrado (self-healing completo). Desativado por padrão
+# para que a correção passe por revisão humana no dashboard.
+AUTO_HEAL = os.environ.get("AUTO_HEAL", "").lower() in ("1", "true", "yes")
