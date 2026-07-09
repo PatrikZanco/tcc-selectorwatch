@@ -117,8 +117,8 @@
   <div class="col-6 col-md">
     <div class="card text-center h-100 bg-light">
       <div class="card-body py-2">
-        <h4 class="mb-0">{% if mttr_hours is not None %}{{ mttr_hours }}h{% else %}—{% endif %}</h4>
-        <small class="text-muted">MTTR Médio</small>
+        <h4 class="mb-0">{% if mttr_hours is not None %}{{ mttr_hours }}h{% else %}<span class="text-secondary">n/d</span>{% endif %}</h4>
+        <small class="text-muted">MTTR Médio{% if mttr_hours is None %} (produção)⁴{% endif %}</small>
       </div>
     </div>
   </div>
@@ -190,11 +190,10 @@
       <div class="col-6 col-lg-3">
         <div class="card text-center h-100 border-2 border-success shadow-sm">
           <div class="card-body">
+            {% if mttr_hours is not None %}
             <div class="d-flex justify-content-center gap-3 mb-1">
               <div>
-                <div class="fs-3 fw-bold text-success">
-                  {% if mttr_hours is not None %}{{ mttr_hours }}h{% else %}—{% endif %}
-                </div>
+                <div class="fs-3 fw-bold text-success">{{ mttr_hours }}h</div>
                 <div class="badge bg-success">Sistema</div>
               </div>
               <div class="vr"></div>
@@ -205,6 +204,11 @@
             </div>
             <div class="fw-semibold mb-1">MTTR</div>
             <div class="small text-muted">Tempo médio de recuperação</div>
+            {% else %}
+            <div class="fs-3 fw-bold text-secondary mb-1"><i class="bi bi-hourglass-split"></i></div>
+            <div class="fw-semibold mb-1">MTTR</div>
+            <div class="small text-muted">Requer monitoramento em produção⁴<br>(detecção → correção ao longo do tempo real)</div>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -222,7 +226,7 @@
               <i class="bi bi-clock-history me-1"></i>{{ time_saved }}h economizadas
             </span>
             {% else %}
-            <span class="badge bg-light text-muted border">Aguardando eventos</span>
+            <span class="badge bg-light text-muted border">Tempo economizado: depende do MTTR⁴</span>
             {% endif %}
           </div>
         </div>
@@ -233,6 +237,8 @@
       ¹ Recall manual: detecta 100% das falhas, mas com atraso de horas/dias.
       ² Precisão manual: desenvolvedor aplica apenas correções verificadas, porém com custo de tempo elevado.
       ³ MTTR manual estimado em 24h (1 dia útil) — referência da literatura de manutenção de web scrapers.
+      ⁴ MTTR do sistema e tempo economizado exigem operação contínua em produção (falhas reais detectadas e
+      corrigidas ao longo de dias). Não são mensuráveis via injeção controlada de falhas, que é instantânea.
     </p>
   </div>
 </div>
